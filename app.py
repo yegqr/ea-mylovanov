@@ -2,28 +2,29 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import io
 
 # Page configuration
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
-# I corrected the duplicate 'EA posts fb' header to 'count of EA threads X' for the first instance
+# Expanded 2-month data
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
 10/29/2025,31,13063,881,95,0,6,3652,304,445,0
 10/30/2025,19,3083,127,22,0,6,2431,222,190,0
 10/31/2025,20,14463,391,62,0,5,3224,164,236,0
-11/1/2025,62,21283,370,200,0,6,4214,321,249,0
-11/2/2025,32,19443,808,67,0,5,6544,563,2446,0
-11/3/2025,26,15317,665,105,0,6,2421,147,118,0
-11/4/2025,41,7461,411,43,0,6,7288,664,911,0
-11/5/2025,30,9516,221,65,0,6,2925,584,186,0
-11/6/2025,26,14179,583,61,0,6,2963,207,139,0
-11/7/2025,39,15157,916,81,0,5,4145,550,253,0
-11/8/2025,34,9214,316,58,0,6,1064,89,106,0
-11/9/2025,60,16448,513,94,0,6,5943,442,423,0
+11/01/2025,62,21283,370,200,0,6,4214,321,249,0
+11/02/2025,32,19443,808,67,0,5,6544,563,2446,0
+11/03/2025,26,15317,665,105,0,6,2421,147,118,0
+11/04/2025,41,7461,411,43,0,6,7288,664,911,0
+11/05/2025,30,9516,221,65,0,6,2925,584,186,0
+11/06/2025,26,14179,583,61,0,6,2963,207,139,0
+11/07/2025,39,15157,916,81,0,5,4145,550,253,0
+11/08/2025,34,9214,316,58,0,6,1064,89,106,0
+11/09/2025,60,16448,513,94,0,6,5943,442,423,0
 11/10/2025,30,11174,487,155,0,6,6661,853,1763,0
 11/11/2025,20,2781,177,22,0,6,3822,1824,322,3
 11/12/2025,54,8158,538,48,0,8,953,464,30,2
@@ -45,15 +46,15 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 11/28/2025,45,29417,1169,325,0,7,6048,2234,217,0
 11/29/2025,49,24840,1030,125,0,6,10131,689,624,0
 11/30/2025,26,16703,608,62,0,6,10947,1821,2652,0
-12/1/2025,62,35129,937,269,0,7,11497,1044,1186,0
-12/2/2025,32,19640,624,85,0,6,5393,209,1554,0
-12/3/2025,43,19113,1377,257,0,6,1619,502,105,0
-12/4/2025,18,7887,1114,100,0,5,5217,313,508,0
-12/5/2025,21,13807,653,56,0,6,3688,606,495,0
-12/6/2025,24,11215,518,78,0,6,2922,238,252,0
-12/7/2025,43,35492,1192,209,0,6,13306,891,1243,0
-12/8/2025,44,15696,621,112,0,6,900,184,70,0
-12/9/2025,30,16369,1736,270,0,8,8112,926,1213,0
+12/01/2025,62,35129,937,269,0,7,11497,1044,1186,0
+12/02/2025,32,19640,624,85,0,6,5393,209,1554,0
+12/03/2025,43,19113,1377,257,0,6,1619,502,105,0
+12/04/2025,18,7887,1114,100,0,5,5217,313,508,0
+12/05/2025,21,13807,653,56,0,6,3688,606,495,0
+12/06/2025,24,11215,518,78,0,6,2922,238,252,0
+12/07/2025,43,35492,1192,209,0,6,13306,891,1243,0
+12/08/2025,44,15696,621,112,0,6,900,184,70,0
+12/09/2025,30,16369,1736,270,0,8,8112,926,1213,0
 12/10/2025,52,33672,734,293,0,5,12277,1894,581,0
 12/11/2025,40,38558,1488,330,0,5,13701,694,1232,0
 12/12/2025,24,22641,766,178,0,5,18119,1838,612,0
@@ -70,14 +71,18 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-media_raw = """Date,Media,Topic,Status,Origin
-24.11.2025,CNN,Peace Negotiations,Conducted,International
-21.11.2025,Fanpage,US-RU 28 points,Conducted,International
+# Monthly Media Appearances Data
+media_hist_raw = """Month,International,Local
+September,3,2
+October,2,3
+November,8,3
+December,6,2"""
+
+# Scandal-specific Media Data
+media_scandal_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Radio Liberty,Energoatom,Conducted,International
 11.11.2025,National Marathon,Energoatom,Conducted,Local
 11.11.2025,Suspilne,Energoatom,Conducted,Local
-04.11.2025,BBC,Ukraine Update,Conducted,International
-04.11.2025,CNN,-,Conducted,International
 11.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
 11.11.2025,1+1,Energoatom,Refused,Local
 11.11.2025,Rada TV,Energoatom,Refused,Local
@@ -86,34 +91,28 @@ media_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,24 Channel,Energoatom,Refused,Local
 11.11.2025,Apostrophe,Energoatom,Refused,Local
 11.11.2025,Hromadske Radio,Energoatom,Refused,Local
-11.11.2025,Radio NV,Energoatom,Refused,Local"""
+11.11.2025,Radio NV,Energoatom,Refused,Local
+21.11.2025,Fanpage,US-RU 28 points,Conducted,International
+24.11.2025,CNN,Peace Negotiations,Conducted,International"""
 
 # Data Processing
 df_sm = pd.read_csv(io.StringIO(sm_raw))
 df_sm['Date'] = pd.to_datetime(df_sm['Date'])
-df_media = pd.read_csv(io.StringIO(media_raw))
+df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
+df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
 
-# Fixed position for the vertical line
+# Legend and Date settings
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
-
-# Legend Configuration
-bottom_legend = dict(
-    orientation="h",
-    yanchor="bottom",
-    y=-0.3,
-    xanchor="center",
-    x=0.5
-)
+bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
 
 # --- DASHBOARD UI ---
-st.title("Activity Data Dashboard (2-Month Analysis)")
+st.title("Activity Data Dashboard")
 
-# Metadata
 st.info("""
-**Study Period:** Oct 27 — Dec 24, 2025.  
-**Event Date (Nov 10):** Energoatom scandal start.  
-**EA Content:** Energoatom-related content.  
-**Else Content:** All other threads/posts.
+**Study Window:** Oct 27 — Dec 24, 2025.  
+**Scandal Period (starting Nov 10):** Focus on Energoatom-related communications.  
+**EA Content:** Energoatom-related threads/posts.  
+**Else Content:** General professional output.
 """)
 
 st.divider()
@@ -125,37 +124,54 @@ t1, t2 = st.tabs(["X (Threads)", "Facebook (Posts)"])
 with t1:
     fig_x = go.Figure()
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of X threads'], name='Else content', marker_color='#E1E8ED'))
-    fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA threads X'], name='Energoatom-related content', marker_color='#1DA1F2'))
+    fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA threads X'], name='EA Content', marker_color='#1DA1F2'))
     fig_x.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_x.update_layout(barmode='overlay', title="X Threads Distribution", hovermode="x unified", legend=bottom_legend)
+    fig_x.update_layout(barmode='overlay', title="X Threads Volume", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_x, use_container_width=True)
 
 with t2:
     fig_fb = go.Figure()
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of FB posts'], name='Else content', marker_color='#E7F3FF'))
-    fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='Energoatom-related content', marker_color='#1877F2'))
+    fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='EA Content', marker_color='#1877F2'))
     fig_fb.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Distribution", hovermode="x unified", legend=bottom_legend)
+    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Volume", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_fb, use_container_width=True)
 
 st.divider()
 
-# 2. Media Section
-st.subheader("2. Media interview inquiries (Oct 27 — Nov 23, 2025)")
-c_m1, c_m2 = st.columns([1, 1])
+# 2. Media Presence During Scandal
+st.subheader("2. Media Presence During Scandal (Nov 10 – Nov 24, 2025)")
+c_m1, c_m2 = st.columns(2)
 
 with c_m1:
-    origin_counts = df_media.groupby(['Origin', 'Status']).size().reset_index(name='Count')
+    origin_counts = df_media_scandal.groupby(['Origin', 'Status']).size().reset_index(name='Count')
     fig_origin = px.bar(origin_counts, x='Origin', y='Count', color='Status', barmode='group',
                         color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
-                        title="Local vs International Handling")
+                        title="Local vs International Inquiry Handling")
     fig_origin.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_origin, use_container_width=True)
 
 with c_m2:
-    status_summary = df_media['Status'].value_counts()
+    status_summary = df_media_scandal['Status'].value_counts()
     fig_pie = px.pie(names=status_summary.index, values=status_summary.values,
                      color=status_summary.index, color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
-                     hole=0.4, title="Overall Acceptance")
+                     hole=0.4, title="Accepted vs Refused Rate")
     fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
+
+st.divider()
+
+# 3. Monthly Media Trend
+st.subheader("3. Media Appearances by Month")
+st.caption("Actual appearances in media with a breakdown into international and local outlets.")
+
+# Sorting months to ensure correct order
+df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=['September', 'October', 'November', 'December'], ordered=True)
+df_media_hist = df_media_hist.sort_values('Month')
+
+fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
+                 barmode='group',
+                 color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
+                 title="Media Appearances Trend (Sept - Dec 2025)")
+fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances")
+st.plotly_chart(fig_hist, use_container_width=True)
