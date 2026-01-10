@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import io
 
 # Page configuration
@@ -16,7 +15,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 2025-10-30,19,3083,127,22,0,6,2431,222,190,0
 2025-10-31,20,14463,391,62,0,5,3224,164,236,0
 2025-11-01,62,21283,370,200,0,6,4214,321,249,0
-2025-11-02,32,19443,808,67,0,5,6544,563,2446,0
+2025-11-02,32,19443,808,67,0,5,6544,563,2446,1
 2025-11-03,26,15317,665,105,0,6,2421,147,118,0
 2025-11-04,41,7461,411,43,0,6,7288,664,911,0
 2025-11-05,30,9516,221,65,0,6,2925,584,186,0
@@ -47,15 +46,15 @@ media_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Suspilne,Energoatom,Conducted,Local
 04.11.2025,BBC,Ukraine Update,Conducted,International
 04.11.2025,CNN,-,Conducted,International
-11.11.2025-15.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
-11.11.2025-15.11.2025,1+1,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Rada TV,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Inter,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Suspilne,Energoatom,Refused,Local
-11.11.2025-15.11.2025,24 Channel,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Apostrophe,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Hromadske Radio,Energoatom,Refused,Local
-11.11.2025-15.11.2025,Radio NV,Energoatom,Refused,Local"""
+11.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
+11.11.2025,1+1,Energoatom,Refused,Local
+11.11.2025,Rada TV,Energoatom,Refused,Local
+11.11.2025,Inter,Energoatom,Refused,Local
+11.11.2025,Suspilne,Energoatom,Refused,Local
+11.11.2025,24 Channel,Energoatom,Refused,Local
+11.11.2025,Apostrophe,Energoatom,Refused,Local
+11.11.2025,Hromadske Radio,Energoatom,Refused,Local
+11.11.2025,Radio NV,Energoatom,Refused,Local"""
 
 # Data Processing
 df_sm = pd.read_csv(io.StringIO(sm_raw))
@@ -73,7 +72,7 @@ def highlight_status(val):
         return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
     return ''
 
-# Common Legend Configuration for bottom alignment
+# Legend Configuration for bottom alignment
 bottom_legend = dict(
     orientation="h",
     yanchor="bottom",
@@ -145,49 +144,3 @@ with col_g:
 with col_r:
     st.error("❌ Refused")
     st.dataframe(df_media[df_media['Status'] == 'Refused'].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
-
-st.divider()
-
-# 3. Engagement Section
-st.subheader("3. Engagement vs Content Correlation")
-st.caption("*EA stands for Energoatom")
-
-def plot_correlation(df, platform, metric_name, data_col, ea_col, type_label):
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    # Total Engagement (Bars)
-    fig.add_trace(
-        go.Bar(x=df['Date'], y=df[data_col], name=f'{metric_name} count', marker_color='rgba(150, 150, 150, 0.4)'),
-        secondary_y=False,
-    )
-    # EA Content (Line)
-    fig.add_trace(
-        go.Scatter(x=df['Date'], y=df[ea_col], name=f'EA {type_label} count', mode='lines+markers', line=dict(color='red', width=2)),
-        secondary_y=True,
-    )
-    fig.add_vline(x=event_pos, line_dash="dot", line_color="grey")
-    fig.update_layout(
-        title=f"{platform}: {metric_name} vs EA {type_label.capitalize()}", 
-        hovermode="x unified",
-        legend=bottom_legend
-    )
-    fig.update_yaxes(title_text=f"{metric_name} (Scale)", secondary_y=False)
-    fig.update_yaxes(title_text=f"EA {type_label.capitalize()} (Scale)", secondary_y=True)
-    return fig
-
-e_tab_x, e_tab_fb = st.tabs(["X Correlation", "Facebook Correlation"])
-
-with e_tab_x:
-    cx1, cx2 = st.columns(2)
-    with cx1:
-        st.plotly_chart(plot_correlation(df_sm, "X", "Likes", "sum of X likes", "count of EA posts X", "threads"), use_container_width=True)
-    with cx2:
-        df_sm['X_Shares_Comm'] = df_sm['sum of X comments'] + df_sm['sum of X shares']
-        st.plotly_chart(plot_correlation(df_sm, "X", "Shares & Comments", "X_Shares_Comm", "count of EA posts X", "threads"), use_container_width=True)
-
-with e_tab_fb:
-    cf1, cf2 = st.columns(2)
-    with cf1:
-        st.plotly_chart(plot_correlation(df_sm, "Facebook", "Likes", "sum of FB likes", "count of EA posts fb", "posts"), use_container_width=True)
-    with cf2:
-        df_sm['FB_Shares_Comm'] = df_sm['sum of FB comments'] + df_sm['sum of FB shares']
-        st.plotly_chart(plot_correlation(df_sm, "Facebook", "Shares & Comments", "FB_Shares_Comm", "count of EA posts fb", "posts"), use_container_width=True)
