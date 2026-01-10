@@ -73,6 +73,15 @@ def highlight_status(val):
         return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
     return ''
 
+# Common Legend Configuration for bottom alignment
+bottom_legend = dict(
+    orientation="h",
+    yanchor="bottom",
+    y=-0.3,
+    xanchor="center",
+    x=0.5
+)
+
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
@@ -95,7 +104,7 @@ with t1:
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of X threads'], name='Else content', marker_color='#E1E8ED'))
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts X'], name='Energoatom-related content', marker_color='#1DA1F2'))
     fig_x.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_x.update_layout(barmode='overlay', title="X Threads Distribution", hovermode="x unified")
+    fig_x.update_layout(barmode='overlay', title="X Threads Distribution", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_x, use_container_width=True)
 
 with t2:
@@ -103,7 +112,7 @@ with t2:
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of FB posts'], name='Else content', marker_color='#E7F3FF'))
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='Energoatom-related content', marker_color='#1877F2'))
     fig_fb.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Distribution", hovermode="x unified")
+    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Distribution", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_fb, use_container_width=True)
 
 st.divider()
@@ -117,6 +126,7 @@ with c_m1:
     fig_origin = px.bar(origin_counts, x='Origin', y='Count', color='Status', barmode='group',
                         color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
                         title="Local vs International Handling")
+    fig_origin.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_origin, use_container_width=True)
 
 with c_m2:
@@ -124,6 +134,7 @@ with c_m2:
     fig_pie = px.pie(names=status_summary.index, values=status_summary.values,
                      color=status_summary.index, color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
                      hole=0.4, title="Overall Acceptance")
+    fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
 
 st.markdown("### Inquiry Logs")
@@ -154,7 +165,11 @@ def plot_correlation(df, platform, metric_name, data_col, ea_col, type_label):
         secondary_y=True,
     )
     fig.add_vline(x=event_pos, line_dash="dot", line_color="grey")
-    fig.update_layout(title=f"{platform}: {metric_name} vs EA {type_label.capitalize()}", hovermode="x unified")
+    fig.update_layout(
+        title=f"{platform}: {metric_name} vs EA {type_label.capitalize()}", 
+        hovermode="x unified",
+        legend=bottom_legend
+    )
     fig.update_yaxes(title_text=f"{metric_name} (Scale)", secondary_y=False)
     fig.update_yaxes(title_text=f"EA {type_label.capitalize()} (Scale)", secondary_y=True)
     return fig
