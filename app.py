@@ -116,11 +116,13 @@ st.title("Activity Data Dashboard")
 # Methodology & Context Block
 st.info("""
 **Methodology & Context:**
-- **Study Window:** October 27 — December 24, 2025.
-- **Scandal Period:** Starting November 10, focusing on communications related to Energoatom.
-- **Content Classification:**
-    - **EA Content:** Threads and posts specifically addressing Energoatom-related events.
-    - **Else Content:** General professional output and other topical discussions.
+
+1. **Historical Context Period (June — December 2025):** Tracks monthly aggregate media appearances to establish a long-term baseline for international and local expert presence.
+2. **Event-Specific Window (October 27 — December 24, 2025):** Detailed daily monitoring of social media output and inquiry handling surrounding the November 10 event.
+
+**Definitions:**
+- **EA Content:** Threads and posts related specifically to Energoatom.
+- **Else Content:** Content not related to the Energoatom scandal.
 """)
 
 st.divider()
