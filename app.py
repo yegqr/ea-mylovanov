@@ -80,7 +80,7 @@ October,2,3
 November,8,3
 December,6,2"""
 
-# Scandal-specific Media Data (Nov 10 - Nov 24)
+# Detailed Inquiries (Nov 10 - Nov 24)
 media_scandal_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Radio Liberty,Energoatom,Conducted,International
 11.11.2025,National Marathon,Energoatom,Conducted,Local
@@ -107,13 +107,20 @@ df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 # Fixed position for the vertical line
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 
-# Legend Configuration
+# Legend and styling functions
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
+
+def highlight_status(val):
+    if val == 'Conducted':
+        return 'background-color: #d4edda; color: #155724; font-weight: bold;'
+    elif val == 'Refused':
+        return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
+    return ''
 
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
-# Methodology & Context Block
+# Methodology & Context Section
 st.info("""
 **Methodology & Context:**
 
@@ -122,7 +129,7 @@ st.info("""
 
 **Definitions:**
 - **EA Content:** Threads and posts related specifically to Energoatom.
-- **Else Content:** Content not related to the Energoatom scandal.
+- **Else Content:** Professional output not related to the specific event.
 """)
 
 st.divider()
@@ -169,13 +176,26 @@ with c_m2:
     fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
 
+# Returning the tables 1:1 as requested
+st.markdown("### Inquiry Logs (Nov 10 – Nov 24)")
+col_green, col_red = st.columns(2)
+
+with col_green:
+    st.success("✅ Conducted")
+    df_conducted = df_media_scandal[df_media_scandal['Status'] == 'Conducted']
+    st.dataframe(df_conducted.style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+
+with col_red:
+    st.error("❌ Refused")
+    df_refused = df_media_scandal[df_media_scandal['Status'] == 'Refused']
+    st.dataframe(df_refused.style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+
 st.divider()
 
 # 3. Historical Media Presence Trend
 st.subheader("3. Monthly Media Appearances (June – Dec 2025)")
-st.caption("Distribution of actual appearances in local and international media outlets.")
+st.caption("Aggregated monthly appearances in local and international media outlets.")
 
-# Sorting months chronologically
 month_order = ['June', 'July', 'August', 'September', 'October', 'November', 'December']
 df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=month_order, ordered=True)
 df_media_hist = df_media_hist.sort_values('Month')
@@ -183,7 +203,7 @@ df_media_hist = df_media_hist.sort_values('Month')
 fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
                  barmode='stack',
                  color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
-                 title="Media Appearances Distribution")
+                 title="Media Appearances Distribution (Historical Perspective)")
 
 fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified")
 st.plotly_chart(fig_hist, use_container_width=True)
