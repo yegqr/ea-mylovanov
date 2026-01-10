@@ -8,7 +8,7 @@ import io
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
-# 2-month social media data (Oct 27 - Dec 24)
+# Event-Specific Window (Oct 27 - Dec 24)
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -70,7 +70,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# Historical Monthly Data (June - Dec)
+# Historical Context (June - Dec)
 media_hist_raw = """Month,International,Local
 June,0,5
 July,2,9
@@ -82,18 +82,18 @@ December,6,2"""
 
 # Detailed Inquiries (Nov 10 - Nov 24)
 media_scandal_raw = """Date,Media,Topic,Status,Origin
-11.11.2025,Radio Liberty,Energoatom,Conducted,International
+11.11.2025,Radio Liberty,Energoatom,Conducted,Local
 11.11.2025,National Marathon,Energoatom,Conducted,Local
 11.11.2025,Suspilne,Energoatom,Conducted,Local
-11.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
-11.11.2025,1+1,Energoatom,Refused,Local
-11.11.2025,Rada TV,Energoatom,Refused,Local
-11.11.2025,Inter,Energoatom,Refused,Local
-11.11.2025,Suspilne,Energoatom,Refused,Local
-11.11.2025,24 Channel,Energoatom,Refused,Local
-11.11.2025,Apostrophe,Energoatom,Refused,Local
-11.11.2025,Hromadske Radio,Energoatom,Refused,Local
-11.11.2025,Radio NV,Energoatom,Refused,Local
+11.11 - 16.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
+11.11 - 16.11.2025,1+1,Energoatom,Refused,Local
+11.11 - 16.11.2025,Rada TV,Energoatom,Refused,Local
+11.11 - 16.11.2025,Inter,Energoatom,Refused,Local
+11.11 - 16.11.2025,Suspilne,Energoatom,Refused,Local
+11.11 - 16.11.2025,24 Channel,Energoatom,Refused,Local
+11.11 - 16.11.2025,Apostrophe,Energoatom,Refused,Local
+11.11 - 16.11.2025,Hromadske Radio,Energoatom,Refused,Local
+11.11 - 16.11.2025,Radio NV,Energoatom,Refused,Local
 21.11.2025,Fanpage,US-RU 28 points,Conducted,International
 24.11.2025,CNN,Peace Negotiations,Conducted,International"""
 
@@ -176,7 +176,6 @@ with c_m2:
     fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
 
-# Returning the tables 1:1 as requested
 st.markdown("### Inquiry Logs (Nov 10 – Nov 24)")
 col_green, col_red = st.columns(2)
 
