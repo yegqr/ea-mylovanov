@@ -9,7 +9,7 @@ import io
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
-# Expanded 2-month data
+# Expanded 2-month social media data
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -71,8 +71,11 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# Monthly Media Appearances Data
+# UPDATED Monthly Media Appearances (Expanded Data)
 media_hist_raw = """Month,International,Local
+June,0,5
+July,2,9
+August,5,4
 September,3,2
 October,2,3
 November,8,3
@@ -161,17 +164,25 @@ with c_m2:
 
 st.divider()
 
-# 3. Monthly Media Trend
+# 3. Monthly Media Trend (Stacked Bar Chart)
 st.subheader("3. Media Appearances by Month")
-st.caption("Actual appearances in media with a breakdown into international and local outlets.")
+st.caption("Actual monthly appearances in media outlets (International vs Local).")
 
-# Sorting months to ensure correct order
-df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=['September', 'October', 'November', 'December'], ordered=True)
+# Sorting months to ensure correct chronological order
+month_order = ['June', 'July', 'August', 'September', 'October', 'November', 'December']
+df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=month_order, ordered=True)
 df_media_hist = df_media_hist.sort_values('Month')
 
+# Creating the Stacked Bar Chart
 fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
-                 barmode='group',
+                 barmode='stack', # Explicitly set to stacked
                  color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
-                 title="Media Appearances Trend (Sept - Dec 2025)")
-fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances")
+                 title="Historical Media Presence Trend")
+
+fig_hist.update_layout(
+    legend=bottom_legend, 
+    xaxis_title="", 
+    yaxis_title="Total Appearances",
+    hovermode="x unified"
+)
 st.plotly_chart(fig_hist, use_container_width=True)
