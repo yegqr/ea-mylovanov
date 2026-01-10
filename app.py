@@ -64,14 +64,6 @@ df_media = pd.read_csv(io.StringIO(media_raw))
 # Fixed position for the vertical line
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 
-# Function for styling status
-def highlight_status(val):
-    if val == 'Conducted':
-        return 'background-color: #d4edda; color: #155724; font-weight: bold;'
-    elif val == 'Refused':
-        return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
-    return ''
-
 # Legend Configuration for bottom alignment
 bottom_legend = dict(
     orientation="h",
@@ -135,12 +127,3 @@ with c_m2:
                      hole=0.4, title="Overall Acceptance")
     fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
-
-st.markdown("### Inquiry Logs")
-col_g, col_r = st.columns(2)
-with col_g:
-    st.success("✅ Conducted")
-    st.dataframe(df_media[df_media['Status'] == 'Conducted'].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
-with col_r:
-    st.error("❌ Refused")
-    st.dataframe(df_media[df_media['Status'] == 'Refused'].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
