@@ -47,15 +47,15 @@ media_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Suspilne,Energoatom,Conducted,Local
 04.11.2025,BBC,Ukraine Update,Conducted,International
 04.11.2025,CNN,-,Conducted,International
-11.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
-11.11.2025,1+1,Energoatom,Refused,Local
-11.11.2025,Rada TV,Energoatom,Refused,Local
-11.11.2025,Inter,Energoatom,Refused,Local
-11.11.2025,Suspilne,Energoatom,Refused,Local
-11.11.2025,24 Channel,Energoatom,Refused,Local
-11.11.2025,Apostrophe,Energoatom,Refused,Local
-11.11.2025,Hromadske Radio,Energoatom,Refused,Local
-11.11.2025,Radio NV,Energoatom,Refused,Local"""
+11.11.2025-15.11.2025,SLM (ICTV + СТБ),Energoatom,Refused,Local
+11.11.2025-15.11.2025,1+1,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Rada TV,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Inter,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Suspilne,Energoatom,Refused,Local
+11.11.2025-15.11.2025,24 Channel,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Apostrophe,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Hromadske Radio,Energoatom,Refused,Local
+11.11.2025-15.11.2025,Radio NV,Energoatom,Refused,Local"""
 
 # Data Processing
 df_sm = pd.read_csv(io.StringIO(sm_raw))
