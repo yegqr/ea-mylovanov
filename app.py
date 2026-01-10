@@ -2,14 +2,13 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import io
 
 # Page configuration
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
-# Social Media Data (Oct 27 — Dec 24, 2025)
+# 2-month social media data (Oct 27 - Dec 24)
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -71,7 +70,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# Monthly Media Appearances (Historical)
+# Historical Monthly Data (June - Dec)
 media_hist_raw = """Month,International,Local
 June,0,5
 July,2,9
@@ -81,7 +80,7 @@ October,2,3
 November,8,3
 December,6,2"""
 
-# Scandal-specific Media Data (Nov 10 — Nov 24)
+# Scandal-specific Media Data (Nov 10 - Nov 24)
 media_scandal_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Radio Liberty,Energoatom,Conducted,International
 11.11.2025,National Marathon,Energoatom,Conducted,Local
@@ -98,30 +97,35 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 21.11.2025,Fanpage,US-RU 28 points,Conducted,International
 24.11.2025,CNN,Peace Negotiations,Conducted,International"""
 
-# Data Processing
+# --- DATA PROCESSING ---
 df_sm = pd.read_csv(io.StringIO(sm_raw))
 df_sm['Date'] = pd.to_datetime(df_sm['Date'])
-df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
-df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
 
-# Legend and UI Constants
+df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
+df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
+
+# Fixed position for the vertical line
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
-bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5)
+
+# Legend Configuration
+bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
 
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
-# Study Metadata & Scope
+# Methodology & Context Block
 st.info("""
-**Study Window:** Oct 27 — Dec 24, 2025.  
-**Scandal Period:** Starting Nov 10, focused on Energoatom-related communications.  
-**EA Content:** Specifically Energoatom-related Threads (X) or Posts (Facebook).  
-**Else Content:** All other professional output and general expert activity.
+**Methodology & Context:**
+- **Study Window:** October 27 — December 24, 2025.
+- **Scandal Period:** Starting November 10, focusing on communications related to Energoatom.
+- **Content Classification:**
+    - **EA Content:** Threads and posts specifically addressing Energoatom-related events.
+    - **Else Content:** General professional output and other topical discussions.
 """)
 
 st.divider()
 
-# 1. Input Volume Section
+# 1. Input Section
 st.subheader("1. Input in X & Facebook")
 t1, t2 = st.tabs(["X (Threads)", "Facebook (Posts)"])
 
@@ -129,21 +133,21 @@ with t1:
     fig_x = go.Figure()
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of X threads'], name='Else content', marker_color='#E1E8ED'))
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA threads X'], name='EA Content', marker_color='#1DA1F2'))
-    fig_x.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_x.update_layout(barmode='overlay', title="X Threads Volume (Threads vs EA Topics)", hovermode="x unified", legend=bottom_legend)
+    fig_x.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Nov 10")
+    fig_x.update_layout(barmode='overlay', title="X Threads Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_x, use_container_width=True)
 
 with t2:
     fig_fb = go.Figure()
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of FB posts'], name='Else content', marker_color='#E7F3FF'))
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='EA Content', marker_color='#1877F2'))
-    fig_fb.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Scandal Start")
-    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Volume (Posts vs EA Topics)", hovermode="x unified", legend=bottom_legend)
+    fig_fb.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Nov 10")
+    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_fb, use_container_width=True)
 
 st.divider()
 
-# 2. Media Presence Analysis
+# 2. Media Presence During Scandal Period
 st.subheader("2. Media Presence During Scandal (Nov 10 – Nov 24, 2025)")
 c_m1, c_m2 = st.columns(2)
 
@@ -151,7 +155,7 @@ with c_m1:
     origin_counts = df_media_scandal.groupby(['Origin', 'Status']).size().reset_index(name='Count')
     fig_origin = px.bar(origin_counts, x='Origin', y='Count', color='Status', barmode='group',
                         color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
-                        title="Local vs International Inquiry Handling")
+                        title="Inquiry Handling: Local vs International")
     fig_origin.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_origin, use_container_width=True)
 
@@ -159,46 +163,25 @@ with c_m2:
     status_summary = df_media_scandal['Status'].value_counts()
     fig_pie = px.pie(names=status_summary.index, values=status_summary.values,
                      color=status_summary.index, color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
-                     hole=0.4, title="Accepted vs Refused Rate")
+                     hole=0.4, title="Inquiry Response Rate")
     fig_pie.update_layout(legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
 
 st.divider()
 
-# 3. Monthly Historical Trend
-st.subheader("3. Media Appearances by Month")
+# 3. Historical Media Presence Trend
+st.subheader("3. Monthly Media Appearances (June – Dec 2025)")
+st.caption("Distribution of actual appearances in local and international media outlets.")
+
+# Sorting months chronologically
 month_order = ['June', 'July', 'August', 'September', 'October', 'November', 'December']
 df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=month_order, ordered=True)
 df_media_hist = df_media_hist.sort_values('Month')
 
 fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
-                 barmode='stack', color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
-                 title="Historical Media Presence Trend (Stacked)")
-fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Total Appearances", hovermode="x unified")
+                 barmode='stack',
+                 color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
+                 title="Media Appearances Distribution")
+
+fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified")
 st.plotly_chart(fig_hist, use_container_width=True)
-
-st.divider()
-
-# 4. Summary: System Metrics (Conclusion)
-st.subheader("4. Summary: System Metrics")
-s1, s2, s3 = st.columns(3)
-
-# Calculations
-total_x = df_sm['count of X threads'].sum()
-ea_x = df_sm['count of EA threads X'].sum()
-total_fb = df_sm['count of FB posts'].sum()
-ea_fb = df_sm['count of EA posts fb'].sum()
-
-ea_share_x = (ea_x / total_x) * 100
-ea_share_fb = (ea_fb / total_fb) * 100
-refusal_rate = (len(df_media_scandal[df_media_scandal['Status'] == 'Refused']) / len(df_media_scandal)) * 100
-
-s1.metric("EA Share in X Threads", f"{ea_share_x:.1f}%")
-s2.metric("EA Share in FB Posts", f"{ea_share_fb:.1f}%")
-s3.metric("Media Refusal Rate (Nov 10-24)", f"{refusal_rate:.1f}%")
-
-st.markdown("""
-**Data Summary:** - The volume of Energoatom-related content remains a minor fraction of the total professional output across both platforms.  
-- The high Media Refusal Rate during the peak scandal period indicates a selective communication strategy rather than an reach-maximization effort.  
-- Historical data shows that monthly media appearances in November remained within the typical range observed in previous months (e.g., July).
-""")
