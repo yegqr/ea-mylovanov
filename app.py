@@ -11,13 +11,12 @@ st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 # --- DATA INITIALIZATION ---
 
 # 1. Monthly Engagement Data
-# IMPORTANT: Leading zeros added to single digit months to ensure consistent string parsing if needed, 
-# though date parser handles single digits well.
+# Leading zeros added to ensure consistent parsing
 engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
-6.2025,186147,36518,17331,1398676,42787,18994
-7.2025,392897,69502,52529,993965,23192,6184
-8.2025,256666,31481,38762,60988,1685,416
-9.2025,252840,17736,28284,674011,21745,4733
+06.2025,186147,36518,17331,1398676,42787,18994
+07.2025,392897,69502,52529,993965,23192,6184
+08.2025,256666,31481,38762,60988,1685,416
+09.2025,252840,17736,28284,674011,21745,4733
 10.2025,156383,13990,16235,413384,17544,2774
 11.2025,97183,17360,11130,514210,21905,3265
 12.2025,212159,16606,24040,22345,22345,3971"""
@@ -114,11 +113,9 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 # --- DATA PROCESSING ---
 
 # 1. Processing Monthly Engagement Data with strict string type for Month
-# KEY FIX: dtype={'Month': str} prevents parsing "10.2025" as float
 df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw), dtype={'Month': str})
 df_eng_monthly['Date_Obj'] = pd.to_datetime(df_eng_monthly['Month'], format='%m.%Y')
 df_eng_monthly = df_eng_monthly.sort_values('Date_Obj')
-# Create Label "Nov 25"
 df_eng_monthly['Label'] = df_eng_monthly['Date_Obj'].dt.strftime('%b %y')
 
 # 2. Processing Daily Data
@@ -132,7 +129,6 @@ df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 # Layout constants
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
-# KEY FIX: Force white template
 white_template = "plotly_white"
 
 def highlight_status(val):
@@ -149,12 +145,12 @@ st.title("Activity Data Dashboard")
 st.info("""
 **Methodology & Context:**
 
-1. **General Output by Month:** Aggregated engagement metrics to establish baseline performance.
-2. **Historical Context Period:** Media appearances baseline.
-3. **Event-Specific Window (Oct 27 — Dec 24, 2025):** Detailed monitoring surrounding the Nov 10 event.
+1. **General Output by Month (June — Dec 2025):** Aggregated engagement metrics (Likes, Comments, Shares) to establish organic performance baseline over a 6-month period.
+2. **Historical Context Period:** Media appearances tracking to determine the standard level of expert presence.
+3. **Event-Specific Window (Oct 27 — Dec 24, 2025):** Granular daily monitoring of social media output surrounding the Nov 10 event.
 
 **Definitions:**
-- **EA Content:** Threads/posts related specifically to Energoatom.
+- **EA Content:** Threads and posts related specifically to Energoatom.
 - **Else Content:** Professional output not related to the specific event.
 """)
 
@@ -194,7 +190,7 @@ fig_likes_comp.update_yaxes(title_text="Facebook Likes", secondary_y=False)
 fig_likes_comp.update_yaxes(title_text="X Likes", secondary_y=True)
 st.plotly_chart(fig_likes_comp, use_container_width=True)
 
-# 2.2 Discussion Breakdown (Swapped: X left, FB right)
+# 2.2 Discussion Breakdown (X Left, FB Right)
 c_eng1, c_eng2 = st.columns(2)
 
 with c_eng1:
