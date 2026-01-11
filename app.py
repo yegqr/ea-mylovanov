@@ -5,12 +5,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import io
 
-# Page configuration
+# Конфігурація сторінки
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
+
+# Примусовий світлий стиль для Plotly
+PLOTLY_TEMPLATE = "plotly_white"
 
 # --- DATA INITIALIZATION ---
 
-# NEW: Monthly Engagement Data
+# Дані по місяцях (червень - грудень)
 engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
 06.2025,186147,36518,17331,1398676,42787,18994
 07.2025,392897,69502,52529,993965,23192,6184
@@ -20,7 +23,7 @@ engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comme
 11.2025,97183,17360,11130,514210,21905,3265
 12.2025,212159,16606,24040,22345,22345,3971"""
 
-# Daily Social Media Data (Oct 27 - Dec 24)
+# Щоденні дані (27 жовтня - 24 грудня)
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -82,7 +85,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# Period 1: Historical Context (June - Dec)
+# Медіа дані за місяцями
 media_hist_raw = """Month,International,Local
 June,0,5
 July,2,9
@@ -92,7 +95,7 @@ October,2,3
 November,8,3
 December,6,2"""
 
-# Detailed Inquiries (Nov 10 - Nov 24)
+# Запити медіа (11 - 24 листопада)
 media_scandal_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Radio Liberty,Energoatom,Conducted,Local
 11.11.2025,National Marathon,Energoatom,Conducted,Local
@@ -110,10 +113,13 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 24.11.2025,CNN,Peace Negotiations,Conducted,International"""
 
 # --- DATA PROCESSING ---
+
+# Обробка місячної активності
 df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw))
-# Map months for sorting
-month_map = {"06.2025":"June", "07.2025":"July", "08.2025":"August", "09.2025":"September", "10.2025":"October", "11.2025":"November", "12.2025":"December"}
-df_eng_monthly['Month_Label'] = df_eng_monthly['Month'].map(month_map)
+# Перетворення формату 06.2025 у назву "Jun 25"
+df_eng_monthly['Date_Obj'] = pd.to_datetime(df_eng_monthly['Month'], format='%m.%Y')
+df_eng_monthly = df_eng_monthly.sort_values('Date_Obj')
+df_eng_monthly['Month_Display'] = df_eng_monthly['Date_Obj'].dt.strftime('%b %y')
 
 df_sm = pd.read_csv(io.StringIO(sm_raw))
 df_sm['Date'] = pd.to_datetime(df_sm['Date'])
@@ -121,7 +127,7 @@ df_sm['Date'] = pd.to_datetime(df_sm['Date'])
 df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
 df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 
-# Layout constants
+# Константи для візуалізації
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
 
@@ -135,11 +141,11 @@ def highlight_status(val):
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
-# Methodology & Context Section
+# Methodology & Context
 st.info("""
 **Methodology & Context:**
 
-1. **Monthly Engagement Baseline:** Long-term audience interaction metrics to establish organic reach patterns.
+1. **General output by month (June 2025 — December 2025):** Long-term audience interaction metrics to establish organic reach patterns.
 2. **Historical Context Period (June — December 2025):** Tracks aggregate media appearances baseline.
 3. **Event-Specific Window (October 27 — December 24, 2025):** Detailed monitoring surrounding the November 10 event.
 
@@ -159,7 +165,7 @@ with t_inp1:
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of X threads'], name='Else content', marker_color='#E1E8ED'))
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA threads X'], name='EA Content', marker_color='#1DA1F2'))
     fig_x.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Nov 10")
-    fig_x.update_layout(barmode='overlay', title="X Threads Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
+    fig_x.update_layout(template=PLOTLY_TEMPLATE, barmode='overlay', title="X Threads Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_x, use_container_width=True)
 
 with t_inp2:
@@ -167,44 +173,43 @@ with t_inp2:
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of FB posts'], name='Else content', marker_color='#E7F3FF'))
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='EA Content', marker_color='#1877F2'))
     fig_fb.add_vline(x=event_pos, line_dash="dash", line_color="red", annotation_text="Nov 10")
-    fig_fb.update_layout(barmode='overlay', title="Facebook Posts Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
+    fig_fb.update_layout(template=PLOTLY_TEMPLATE, barmode='overlay', title="Facebook Posts Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_fb, use_container_width=True)
 
 st.divider()
 
-# NEW 2. Monthly Audience Engagement Baseline
-st.subheader("2. Monthly Audience Engagement Baseline")
-st.caption("Long-term analysis of audience interactions to distinguish organic growth from event-specific spikes.")
+# 2. General output by month
+st.subheader("2. General output by month (June 2025 - Dec 2025)")
 
-# 2.1 Likes Comparison Line Chart
+# 2.1 Likes Comparison
 fig_likes_comp = make_subplots(specs=[[{"secondary_y": True}]])
-fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", line=dict(color='#1877F2', width=4)), secondary_y=False)
-fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Likes'], name="X Likes", line=dict(color='#000000', width=4, dash='dot')), secondary_y=True)
-fig_likes_comp.update_layout(title="Comparative Likes Baseline (FB vs X)", legend=bottom_legend, hovermode="x unified")
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", line=dict(color='#1877F2', width=4)), secondary_y=False)
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['X_Likes'], name="X Likes", line=dict(color='#000000', width=4, dash='dot')), secondary_y=True)
+fig_likes_comp.update_layout(template=PLOTLY_TEMPLATE, title="Comparative Likes (FB vs X)", legend=bottom_legend, hovermode="x unified")
 fig_likes_comp.update_yaxes(title_text="Facebook Likes", secondary_y=False)
 fig_likes_comp.update_yaxes(title_text="X Likes", secondary_y=True)
 st.plotly_chart(fig_likes_comp, use_container_width=True)
 
-# 2.2 FB and X Discussion Breakdown (Bars + Lines)
+# 2.2 Shares & Comments breakdown
 c_eng1, c_eng2 = st.columns(2)
 
 with c_eng1:
     fig_fb_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Comments'], name="FB Comments", marker_color='#8b9dc3'), secondary_y=False)
-    fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Shares'], name="FB Shares", line=dict(color='#3b5998', width=3)), secondary_y=True)
-    fig_fb_disc.update_layout(title="Facebook: Comments (Bars) & Shares (Line)", legend=bottom_legend)
+    fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['FB_Comments'], name="FB Comments", marker_color='#8b9dc3'), secondary_y=False)
+    fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['FB_Shares'], name="FB Shares", line=dict(color='#3b5998', width=3)), secondary_y=True)
+    fig_fb_disc.update_layout(template=PLOTLY_TEMPLATE, title="Facebook: Comments & Shares", legend=bottom_legend)
     st.plotly_chart(fig_fb_disc, use_container_width=True)
 
 with c_eng2:
     fig_x_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Comments'], name="X Comments", marker_color='#E1E8ED'), secondary_y=False)
-    fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Shares'], name="X Shares", line=dict(color='#000000', width=3)), secondary_y=True)
-    fig_x_disc.update_layout(title="X: Comments (Bars) & Shares (Line)", legend=bottom_legend)
+    fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['X_Comments'], name="X Comments", marker_color='#E1E8ED'), secondary_y=False)
+    fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Display'], y=df_eng_monthly['X_Shares'], name="X Shares", line=dict(color='#000000', width=3)), secondary_y=True)
+    fig_x_disc.update_layout(template=PLOTLY_TEMPLATE, title="X: Comments & Shares", legend=bottom_legend)
     st.plotly_chart(fig_x_disc, use_container_width=True)
 
 st.divider()
 
-# 3. Media Presence During Scandal Period
+# 3. Media Presence During Scandal
 st.subheader("3. Media Presence During Scandal (Nov 10 – Nov 24, 2025)")
 c_m1, c_m2 = st.columns(2)
 
@@ -213,7 +218,7 @@ with c_m1:
     fig_origin = px.bar(origin_counts, x='Origin', y='Count', color='Status', barmode='group',
                         color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
                         title="Inquiry Handling: Local vs International")
-    fig_origin.update_layout(legend=bottom_legend)
+    fig_origin.update_layout(template=PLOTLY_TEMPLATE, legend=bottom_legend)
     st.plotly_chart(fig_origin, use_container_width=True)
 
 with c_m2:
@@ -221,7 +226,7 @@ with c_m2:
     fig_pie = px.pie(names=status_summary.index, values=status_summary.values,
                      color=status_summary.index, color_discrete_map={'Refused':'#EF553B', 'Conducted':'#00CC96'},
                      hole=0.4, title="Inquiry Response Rate")
-    fig_pie.update_layout(legend=bottom_legend)
+    fig_pie.update_layout(template=PLOTLY_TEMPLATE, legend=bottom_legend)
     st.plotly_chart(fig_pie, use_container_width=True)
 
 st.markdown("### Inquiry Logs (Nov 10 – Nov 24)")
@@ -235,7 +240,7 @@ with col_red:
 
 st.divider()
 
-# 4. Historical Media Presence Trend
+# 4. Monthly Media Appearances
 st.subheader("4. Monthly Media Appearances (June – Dec 2025)")
 month_order = ['June', 'July', 'August', 'September', 'October', 'November', 'December']
 df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=month_order, ordered=True)
@@ -244,6 +249,6 @@ df_media_hist = df_media_hist.sort_values('Month')
 fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
                  barmode='stack',
                  color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
-                 title="Media Appearances Distribution (Historical Perspective)")
-fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified")
+                 title="Media Appearances Distribution")
+fig_hist.update_layout(template=PLOTLY_TEMPLATE, legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified")
 st.plotly_chart(fig_hist, use_container_width=True)
