@@ -11,12 +11,13 @@ st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 # --- DATA INITIALIZATION ---
 
 # 1. Monthly Engagement Data
-# Note: Ensure no trailing spaces after commas
+# IMPORTANT: Leading zeros added to single digit months to ensure consistent string parsing if needed, 
+# though date parser handles single digits well.
 engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
-06.2025,186147,36518,17331,1398676,42787,18994
-07.2025,392897,69502,52529,993965,23192,6184
-08.2025,256666,31481,38762,60988,1685,416
-09.2025,252840,17736,28284,674011,21745,4733
+6.2025,186147,36518,17331,1398676,42787,18994
+7.2025,392897,69502,52529,993965,23192,6184
+8.2025,256666,31481,38762,60988,1685,416
+9.2025,252840,17736,28284,674011,21745,4733
 10.2025,156383,13990,16235,413384,17544,2774
 11.2025,97183,17360,11130,514210,21905,3265
 12.2025,212159,16606,24040,22345,22345,3971"""
@@ -113,7 +114,7 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 # --- DATA PROCESSING ---
 
 # 1. Processing Monthly Engagement Data with strict string type for Month
-# This prevents "10.2025" from being read as a float
+# KEY FIX: dtype={'Month': str} prevents parsing "10.2025" as float
 df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw), dtype={'Month': str})
 df_eng_monthly['Date_Obj'] = pd.to_datetime(df_eng_monthly['Month'], format='%m.%Y')
 df_eng_monthly = df_eng_monthly.sort_values('Date_Obj')
@@ -131,6 +132,7 @@ df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 # Layout constants
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
+# KEY FIX: Force white template
 white_template = "plotly_white"
 
 def highlight_status(val):
@@ -147,12 +149,12 @@ st.title("Activity Data Dashboard")
 st.info("""
 **Methodology & Context:**
 
-1. **Monthly Engagement Baseline:** Long-term audience interaction metrics to establish organic reach patterns.
-2. **Historical Context Period (June — December 2025):** Tracks aggregate media appearances baseline.
-3. **Event-Specific Window (October 27 — December 24, 2025):** Detailed monitoring surrounding the November 10 event.
+1. **General Output by Month:** Aggregated engagement metrics to establish baseline performance.
+2. **Historical Context Period:** Media appearances baseline.
+3. **Event-Specific Window (Oct 27 — Dec 24, 2025):** Detailed monitoring surrounding the Nov 10 event.
 
 **Definitions:**
-- **EA Content:** Threads and posts related specifically to Energoatom.
+- **EA Content:** Threads/posts related specifically to Energoatom.
 - **Else Content:** Professional output not related to the specific event.
 """)
 
@@ -185,33 +187,35 @@ st.subheader("2. General Output by Month (June — Dec 2025)")
 
 # 2.1 Likes Comparison Line Chart
 fig_likes_comp = make_subplots(specs=[[{"secondary_y": True}]])
-fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", mode='lines+markers', line=dict(color='#1877F2', width=4)), secondary_y=False)
-fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Likes'], name="X Likes", mode='lines+markers', line=dict(color='#333333', width=4, dash='dot')), secondary_y=True)
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", mode='lines+markers', line=dict(color='#636EFA', width=4)), secondary_y=False)
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Likes'], name="X Likes", mode='lines+markers', line=dict(color='#00CC96', width=4, dash='dot')), secondary_y=True)
 fig_likes_comp.update_layout(title="Total Likes: Facebook vs X", legend=bottom_legend, hovermode="x unified", template=white_template)
 fig_likes_comp.update_yaxes(title_text="Facebook Likes", secondary_y=False)
 fig_likes_comp.update_yaxes(title_text="X Likes", secondary_y=True)
 st.plotly_chart(fig_likes_comp, use_container_width=True)
 
-# 2.2 FB and X Discussion Breakdown (Bars + Lines)
+# 2.2 Discussion Breakdown (Swapped: X left, FB right)
 c_eng1, c_eng2 = st.columns(2)
 
 with c_eng1:
-    fig_fb_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Comments'], name="Comments", marker_color='#8b9dc3'), secondary_y=False)
-    fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Shares'], name="Shares", mode='lines+markers', line=dict(color='#3b5998', width=3)), secondary_y=True)
-    fig_fb_disc.update_layout(title="Facebook: Comments & Shares", legend=bottom_legend, template=white_template)
-    fig_fb_disc.update_yaxes(title_text="Comments (Bar)", secondary_y=False)
-    fig_fb_disc.update_yaxes(title_text="Shares (Line)", secondary_y=True)
-    st.plotly_chart(fig_fb_disc, use_container_width=True)
-
-with c_eng2:
     fig_x_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Comments'], name="Comments", marker_color='#AAB8C2'), secondary_y=False)
-    fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Shares'], name="Shares", mode='lines+markers', line=dict(color='#14171A', width=3)), secondary_y=True)
+    # X Colors: Teal-ish base
+    fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Comments'], name="Comments", marker_color='rgba(0, 204, 150, 0.5)'), secondary_y=False)
+    fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Shares'], name="Shares", mode='lines+markers', line=dict(color='#00CC96', width=3)), secondary_y=True)
     fig_x_disc.update_layout(title="X (Twitter): Comments & Shares", legend=bottom_legend, template=white_template)
     fig_x_disc.update_yaxes(title_text="Comments (Bar)", secondary_y=False)
     fig_x_disc.update_yaxes(title_text="Shares (Line)", secondary_y=True)
     st.plotly_chart(fig_x_disc, use_container_width=True)
+
+with c_eng2:
+    fig_fb_disc = make_subplots(specs=[[{"secondary_y": True}]])
+    # FB Colors: Purple-ish base
+    fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Comments'], name="Comments", marker_color='rgba(99, 110, 250, 0.5)'), secondary_y=False)
+    fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Shares'], name="Shares", mode='lines+markers', line=dict(color='#636EFA', width=3)), secondary_y=True)
+    fig_fb_disc.update_layout(title="Facebook: Comments & Shares", legend=bottom_legend, template=white_template)
+    fig_fb_disc.update_yaxes(title_text="Comments (Bar)", secondary_y=False)
+    fig_fb_disc.update_yaxes(title_text="Shares (Line)", secondary_y=True)
+    st.plotly_chart(fig_fb_disc, use_container_width=True)
 
 st.divider()
 
