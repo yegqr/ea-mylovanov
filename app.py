@@ -10,7 +10,8 @@ st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
 
-# 1. Monthly Engagement Data (Cleaned CSV format)
+# 1. Monthly Engagement Data
+# Note: Ensure no trailing spaces after commas
 engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
 06.2025,186147,36518,17331,1398676,42787,18994
 07.2025,392897,69502,52529,993965,23192,6184
@@ -111,9 +112,9 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 
 # --- DATA PROCESSING ---
 
-# 1. Processing Monthly Engagement Data
-df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw))
-# Convert to datetime to sort correctly
+# 1. Processing Monthly Engagement Data with strict string type for Month
+# This prevents "10.2025" from being read as a float
+df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw), dtype={'Month': str})
 df_eng_monthly['Date_Obj'] = pd.to_datetime(df_eng_monthly['Month'], format='%m.%Y')
 df_eng_monthly = df_eng_monthly.sort_values('Date_Obj')
 # Create Label "Nov 25"
@@ -130,7 +131,7 @@ df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 # Layout constants
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
-white_template = "plotly_white" # Forcing light theme
+white_template = "plotly_white"
 
 def highlight_status(val):
     if val == 'Conducted':
@@ -146,12 +147,12 @@ st.title("Activity Data Dashboard")
 st.info("""
 **Methodology & Context:**
 
-1. **General Output by Month (June — Dec 2025):** Aggregated engagement metrics to establish baseline performance.
-2. **Historical Context Period:** Media appearances baseline.
-3. **Event-Specific Window (Oct 27 — Dec 24, 2025):** Detailed monitoring surrounding the Nov 10 event.
+1. **Monthly Engagement Baseline:** Long-term audience interaction metrics to establish organic reach patterns.
+2. **Historical Context Period (June — December 2025):** Tracks aggregate media appearances baseline.
+3. **Event-Specific Window (October 27 — December 24, 2025):** Detailed monitoring surrounding the November 10 event.
 
 **Definitions:**
-- **EA Content:** Threads/posts related specifically to Energoatom.
+- **EA Content:** Threads and posts related specifically to Energoatom.
 - **Else Content:** Professional output not related to the specific event.
 """)
 
