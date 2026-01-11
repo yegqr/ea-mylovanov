@@ -10,8 +10,24 @@ st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
 
-# 1. Monthly Engagement Data
-# Leading zeros added to ensure consistent parsing
+# 1. NEW: Sentiment & Volume Data (Cleaned CSV)
+sentiment_raw = """Month,Entity,Positive,Neutral,Negative,Volume
+Jun 25,KSE (Total),14.5%,76.1%,9.4%,"1,467"
+Jul 25,KSE (Total),24.4%,61.5%,14.0%,"2,639"
+Aug 25,KSE (Total),18.0%,65.3%,16.6%,"3,058"
+Sep 25,KSE (Total),30.7%,62.2%,7.2%,"3,306"
+Oct 25,KSE (Total),15.3%,75.3%,9.4%,"2,726"
+Nov 25,KSE (Total),17.6%,72.5%,9.9%,"3,492"
+Dec 25,KSE (Total),14.9%,58.0%,27.0%,"2,519"
+Jun 25,Mylovanov Tymofiy,5.4%,80.2%,14.5%,242
+Jul 25,Mylovanov Tymofiy,26.0%,56.7%,17.3%,924
+Aug 25,Mylovanov Tymofiy,7.2%,81.4%,11.4%,377
+Sep 25,Mylovanov Tymofiy,5.8%,83.3%,10.9%,138
+Oct 25,Mylovanov Tymofiy,4.8%,87.1%,8.2%,796
+Nov 25,Mylovanov Tymofiy,4.8%,72.9%,22.4%,"1,717"
+Dec 25,Mylovanov Tymofiy,8.3%,60.4%,31.3%,361"""
+
+# 2. Monthly Engagement Data
 engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
 06.2025,186147,36518,17331,1398676,42787,18994
 07.2025,392897,69502,52529,993965,23192,6184
@@ -21,7 +37,7 @@ engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comme
 11.2025,97183,17360,11130,514210,21905,3265
 12.2025,212159,16606,24040,22345,22345,3971"""
 
-# 2. Daily Social Media Data (Oct 27 - Dec 24)
+# 3. Daily Social Media Data
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -83,7 +99,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# 3. Historical Context (June - Dec)
+# 4. Historical Context (June - Dec)
 media_hist_raw = """Month,International,Local
 June,0,5
 July,2,9
@@ -93,7 +109,7 @@ October,2,3
 November,8,3
 December,6,2"""
 
-# 4. Detailed Inquiries (Nov 10 - Nov 24)
+# 5. Detailed Inquiries (Nov 10 - Nov 24)
 media_scandal_raw = """Date,Media,Topic,Status,Origin
 11.11.2025,Radio Liberty,Energoatom,Conducted,Local
 11.11.2025,National Marathon,Energoatom,Conducted,Local
@@ -112,17 +128,27 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 
 # --- DATA PROCESSING ---
 
-# 1. Processing Monthly Engagement Data with strict string type for Month
+# 1. Processing Monthly Engagement
 df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw), dtype={'Month': str})
 df_eng_monthly['Date_Obj'] = pd.to_datetime(df_eng_monthly['Month'], format='%m.%Y')
 df_eng_monthly = df_eng_monthly.sort_values('Date_Obj')
 df_eng_monthly['Label'] = df_eng_monthly['Date_Obj'].dt.strftime('%b %y')
 
-# 2. Processing Daily Data
+# 2. Processing Sentiment & Volume
+df_sent = pd.read_csv(io.StringIO(sentiment_raw))
+# Clean numbers
+df_sent['Volume'] = df_sent['Volume'].astype(str).str.replace(',', '').astype(int)
+for col in ['Positive', 'Neutral', 'Negative']:
+    df_sent[col] = df_sent[col].str.replace('%', '').astype(float)
+# Date parsing
+df_sent['Date_Obj'] = pd.to_datetime(df_sent['Month'], format='%b %y')
+df_sent = df_sent.sort_values('Date_Obj')
+
+# 3. Processing Daily Data
 df_sm = pd.read_csv(io.StringIO(sm_raw))
 df_sm['Date'] = pd.to_datetime(df_sm['Date'])
 
-# 3. Processing Media Data
+# 4. Processing Media Data
 df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
 df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 
@@ -141,16 +167,16 @@ def highlight_status(val):
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
-# Methodology & Context Section
 st.info("""
 **Methodology & Context:**
 
-1. **General Output by Month (June — Dec 2025):** Aggregated engagement metrics (Likes, Comments, Shares) to establish organic performance baseline over a 6-month period.
-2. **Historical Context Period:** Media appearances tracking to determine the standard level of expert presence.
-3. **Event-Specific Window (Oct 27 — Dec 24, 2025):** Granular daily monitoring of social media output surrounding the Nov 10 event.
+1. **General Output by Month:** Aggregated engagement metrics establishing organic baseline.
+2. **Historical Context Period:** Media appearances baseline (Jun-Dec 2025).
+3. **Event-Specific Window:** Detailed monitoring of Nov 10 event.
+4. **Public Mentions Analysis:** Comparative volume and sentiment analysis.
 
 **Definitions:**
-- **EA Content:** Threads and posts related specifically to Energoatom.
+- **EA Content:** Threads/posts related specifically to Energoatom.
 - **Else Content:** Professional output not related to the specific event.
 """)
 
@@ -181,7 +207,6 @@ st.divider()
 # 2. General Output by Month
 st.subheader("2. General Output by Month (June — Dec 2025)")
 
-# 2.1 Likes Comparison Line Chart
 fig_likes_comp = make_subplots(specs=[[{"secondary_y": True}]])
 fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", mode='lines+markers', line=dict(color='#636EFA', width=4)), secondary_y=False)
 fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Likes'], name="X Likes", mode='lines+markers', line=dict(color='#00CC96', width=4, dash='dot')), secondary_y=True)
@@ -190,27 +215,19 @@ fig_likes_comp.update_yaxes(title_text="Facebook Likes", secondary_y=False)
 fig_likes_comp.update_yaxes(title_text="X Likes", secondary_y=True)
 st.plotly_chart(fig_likes_comp, use_container_width=True)
 
-# 2.2 Discussion Breakdown (X Left, FB Right)
 c_eng1, c_eng2 = st.columns(2)
-
 with c_eng1:
     fig_x_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    # X Colors: Teal-ish base
     fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Comments'], name="Comments", marker_color='rgba(0, 204, 150, 0.5)'), secondary_y=False)
     fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['X_Shares'], name="Shares", mode='lines+markers', line=dict(color='#00CC96', width=3)), secondary_y=True)
     fig_x_disc.update_layout(title="X (Twitter): Comments & Shares", legend=bottom_legend, template=white_template)
-    fig_x_disc.update_yaxes(title_text="Comments (Bar)", secondary_y=False)
-    fig_x_disc.update_yaxes(title_text="Shares (Line)", secondary_y=True)
     st.plotly_chart(fig_x_disc, use_container_width=True)
 
 with c_eng2:
     fig_fb_disc = make_subplots(specs=[[{"secondary_y": True}]])
-    # FB Colors: Purple-ish base
     fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Comments'], name="Comments", marker_color='rgba(99, 110, 250, 0.5)'), secondary_y=False)
     fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Label'], y=df_eng_monthly['FB_Shares'], name="Shares", mode='lines+markers', line=dict(color='#636EFA', width=3)), secondary_y=True)
     fig_fb_disc.update_layout(title="Facebook: Comments & Shares", legend=bottom_legend, template=white_template)
-    fig_fb_disc.update_yaxes(title_text="Comments (Bar)", secondary_y=False)
-    fig_fb_disc.update_yaxes(title_text="Shares (Line)", secondary_y=True)
     st.plotly_chart(fig_fb_disc, use_container_width=True)
 
 st.divider()
@@ -255,6 +272,29 @@ df_media_hist = df_media_hist.sort_values('Month')
 fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'], 
                  barmode='stack',
                  color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
-                 title="Media Appearances Distribution (Historical Perspective)")
+                 title="Media Appearances Distribution")
 fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified", template=white_template)
 st.plotly_chart(fig_hist, use_container_width=True)
+
+st.divider()
+
+# 5. Analysis of Public Mentions & Sentiment
+st.subheader("5. Analysis of Public Mentions & Sentiment (Jun – Dec 2025)")
+
+# 5.1 Volume Trend (Line Chart Comparison)
+fig_vol = px.bar(df_sent, x='Month', y='Volume', color='Entity', 
+                 barmode='group',
+                 title="Monthly Mentions Volume: KSE vs Mylovanov",
+                 color_discrete_map={'KSE (Total)': '#636EFA', 'Mylovanov Tymofiy': '#EF553B'})
+fig_vol.update_layout(legend=bottom_legend, hovermode="x unified", template=white_template)
+st.plotly_chart(fig_vol, use_container_width=True)
+
+# 5.2 Mylovanov Sentiment (Stacked Bar)
+# Filter for Mylovanov only
+df_sent_mylo = df_sent[df_sent['Entity'] == 'Mylovanov Tymofiy'].copy()
+
+fig_sent = px.bar(df_sent_mylo, x='Month', y=['Positive', 'Neutral', 'Negative'], 
+                  title="Sentiment Dynamics: Mylovanov Tymofiy",
+                  color_discrete_map={'Positive': '#00CC96', 'Neutral': '#E1E8ED', 'Negative': '#EF553B'})
+fig_sent.update_layout(legend=bottom_legend, yaxis_title="Percentage (%)", hovermode="x unified", template=white_template)
+st.plotly_chart(fig_sent, use_container_width=True)
