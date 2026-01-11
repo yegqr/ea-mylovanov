@@ -167,6 +167,7 @@ def highlight_status(val):
 # --- DASHBOARD UI ---
 st.title("Activity Data Dashboard")
 
+# Updated Methodology Section
 st.info("""
 **Methodology & Context:**
 
@@ -290,7 +291,6 @@ fig_vol.update_layout(legend=bottom_legend, hovermode="x unified", template=whit
 st.plotly_chart(fig_vol, use_container_width=True)
 
 # 5.2 Mylovanov Sentiment (Stacked Bar)
-# Filter for Mylovanov only
 df_sent_mylo = df_sent[df_sent['Entity'] == 'Mylovanov Tymofiy'].copy()
 
 fig_sent = px.bar(df_sent_mylo, x='Month', y=['Positive', 'Neutral', 'Negative'], 
