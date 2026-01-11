@@ -2,13 +2,25 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import io
 
 # Page configuration
 st.set_page_config(layout="wide", page_title="Evidence Dashboard")
 
 # --- DATA INITIALIZATION ---
-# Event-Specific Window (Oct 27 - Dec 24)
+
+# NEW: Monthly Engagement Data
+engagement_monthly_raw = """Month,FB_Likes,FB_Comments,FB_Shares,X_Likes,X_Comments,X_Shares
+06.2025,186147,36518,17331,1398676,42787,18994
+07.2025,392897,69502,52529,993965,23192,6184
+08.2025,256666,31481,38762,60988,1685,416
+09.2025,252840,17736,28284,674011,21745,4733
+10.2025,156383,13990,16235,413384,17544,2774
+11.2025,97183,17360,11130,514210,21905,3265
+12.2025,212159,16606,24040,22345,22345,3971"""
+
+# Daily Social Media Data (Oct 27 - Dec 24)
 sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X shares,count of EA threads X,count of FB posts,sum of FB likes,sum of FB comments,sum of FB shares,count of EA posts fb
 10/27/2025,26,10896,347,84,0,6,3320,426,304,0
 10/28/2025,30,13478,825,80,0,6,1605,537,117,0
@@ -70,7 +82,7 @@ sm_raw = """Date,count of X threads,sum of X likes,sum of X comments,sum of X sh
 12/23/2025,95,24312,654,134,0,6,2612,183,148,0
 12/24/2025,110,11759,458,91,0,8,11033,631,358,0"""
 
-# Historical Context (June - Dec)
+# Period 1: Historical Context (June - Dec)
 media_hist_raw = """Month,International,Local
 June,0,5
 July,2,9
@@ -98,16 +110,19 @@ media_scandal_raw = """Date,Media,Topic,Status,Origin
 24.11.2025,CNN,Peace Negotiations,Conducted,International"""
 
 # --- DATA PROCESSING ---
+df_eng_monthly = pd.read_csv(io.StringIO(engagement_monthly_raw))
+# Map months for sorting
+month_map = {"06.2025":"June", "07.2025":"July", "08.2025":"August", "09.2025":"September", "10.2025":"October", "11.2025":"November", "12.2025":"December"}
+df_eng_monthly['Month_Label'] = df_eng_monthly['Month'].map(month_map)
+
 df_sm = pd.read_csv(io.StringIO(sm_raw))
 df_sm['Date'] = pd.to_datetime(df_sm['Date'])
 
 df_media_hist = pd.read_csv(io.StringIO(media_hist_raw))
 df_media_scandal = pd.read_csv(io.StringIO(media_scandal_raw))
 
-# Fixed position for the vertical line
+# Layout constants
 event_pos = pd.to_datetime("2025-11-10").timestamp() * 1000
-
-# Legend and styling functions
 bottom_legend = dict(orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5)
 
 def highlight_status(val):
@@ -124,8 +139,9 @@ st.title("Activity Data Dashboard")
 st.info("""
 **Methodology & Context:**
 
-1. **Historical Context Period (June — December 2025):** Tracks monthly aggregate media appearances to establish a long-term baseline for international and local expert presence.
-2. **Event-Specific Window (October 27 — December 24, 2025):** Detailed daily monitoring of social media output and inquiry handling surrounding the November 10 event.
+1. **Monthly Engagement Baseline:** Long-term audience interaction metrics to establish organic reach patterns.
+2. **Historical Context Period (June — December 2025):** Tracks aggregate media appearances baseline.
+3. **Event-Specific Window (October 27 — December 24, 2025):** Detailed monitoring surrounding the November 10 event.
 
 **Definitions:**
 - **EA Content:** Threads and posts related specifically to Energoatom.
@@ -136,9 +152,9 @@ st.divider()
 
 # 1. Input Section
 st.subheader("1. Input in X & Facebook")
-t1, t2 = st.tabs(["X (Threads)", "Facebook (Posts)"])
+t_inp1, t_inp2 = st.tabs(["X (Threads)", "Facebook (Posts)"])
 
-with t1:
+with t_inp1:
     fig_x = go.Figure()
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of X threads'], name='Else content', marker_color='#E1E8ED'))
     fig_x.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA threads X'], name='EA Content', marker_color='#1DA1F2'))
@@ -146,7 +162,7 @@ with t1:
     fig_x.update_layout(barmode='overlay', title="X Threads Volume (Oct 27 - Dec 24)", hovermode="x unified", legend=bottom_legend)
     st.plotly_chart(fig_x, use_container_width=True)
 
-with t2:
+with t_inp2:
     fig_fb = go.Figure()
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of FB posts'], name='Else content', marker_color='#E7F3FF'))
     fig_fb.add_trace(go.Bar(x=df_sm['Date'], y=df_sm['count of EA posts fb'], name='EA Content', marker_color='#1877F2'))
@@ -156,8 +172,40 @@ with t2:
 
 st.divider()
 
-# 2. Media Presence During Scandal Period
-st.subheader("2. Media Presence During Scandal (Nov 10 – Nov 24, 2025)")
+# NEW 2. Monthly Audience Engagement Baseline
+st.subheader("2. Monthly Audience Engagement Baseline")
+st.caption("Long-term analysis of audience interactions to distinguish organic growth from event-specific spikes.")
+
+# 2.1 Likes Comparison Line Chart
+fig_likes_comp = make_subplots(specs=[[{"secondary_y": True}]])
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Likes'], name="Facebook Likes", line=dict(color='#1877F2', width=4)), secondary_y=False)
+fig_likes_comp.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Likes'], name="X Likes", line=dict(color='#000000', width=4, dash='dot')), secondary_y=True)
+fig_likes_comp.update_layout(title="Comparative Likes Baseline (FB vs X)", legend=bottom_legend, hovermode="x unified")
+fig_likes_comp.update_yaxes(title_text="Facebook Likes", secondary_y=False)
+fig_likes_comp.update_yaxes(title_text="X Likes", secondary_y=True)
+st.plotly_chart(fig_likes_comp, use_container_width=True)
+
+# 2.2 FB and X Discussion Breakdown (Bars + Lines)
+c_eng1, c_eng2 = st.columns(2)
+
+with c_eng1:
+    fig_fb_disc = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_fb_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Comments'], name="FB Comments", marker_color='#8b9dc3'), secondary_y=False)
+    fig_fb_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['FB_Shares'], name="FB Shares", line=dict(color='#3b5998', width=3)), secondary_y=True)
+    fig_fb_disc.update_layout(title="Facebook: Comments (Bars) & Shares (Line)", legend=bottom_legend)
+    st.plotly_chart(fig_fb_disc, use_container_width=True)
+
+with c_eng2:
+    fig_x_disc = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_x_disc.add_trace(go.Bar(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Comments'], name="X Comments", marker_color='#E1E8ED'), secondary_y=False)
+    fig_x_disc.add_trace(go.Scatter(x=df_eng_monthly['Month_Label'], y=df_eng_monthly['X_Shares'], name="X Shares", line=dict(color='#000000', width=3)), secondary_y=True)
+    fig_x_disc.update_layout(title="X: Comments (Bars) & Shares (Line)", legend=bottom_legend)
+    st.plotly_chart(fig_x_disc, use_container_width=True)
+
+st.divider()
+
+# 3. Media Presence During Scandal Period
+st.subheader("3. Media Presence During Scandal (Nov 10 – Nov 24, 2025)")
 c_m1, c_m2 = st.columns(2)
 
 with c_m1:
@@ -178,23 +226,17 @@ with c_m2:
 
 st.markdown("### Inquiry Logs (Nov 10 – Nov 24)")
 col_green, col_red = st.columns(2)
-
 with col_green:
     st.success("✅ Conducted")
-    df_conducted = df_media_scandal[df_media_scandal['Status'] == 'Conducted']
-    st.dataframe(df_conducted.style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
-
+    st.dataframe(df_media_scandal[df_media_scandal['Status'] == 'Conducted'].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 with col_red:
     st.error("❌ Refused")
-    df_refused = df_media_scandal[df_media_scandal['Status'] == 'Refused']
-    st.dataframe(df_refused.style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+    st.dataframe(df_media_scandal[df_media_scandal['Status'] == 'Refused'].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
 st.divider()
 
-# 3. Historical Media Presence Trend
-st.subheader("3. Monthly Media Appearances (June – Dec 2025)")
-st.caption("Aggregated monthly appearances in local and international media outlets.")
-
+# 4. Historical Media Presence Trend
+st.subheader("4. Monthly Media Appearances (June – Dec 2025)")
 month_order = ['June', 'July', 'August', 'September', 'October', 'November', 'December']
 df_media_hist['Month'] = pd.Categorical(df_media_hist['Month'], categories=month_order, ordered=True)
 df_media_hist = df_media_hist.sort_values('Month')
@@ -203,6 +245,5 @@ fig_hist = px.bar(df_media_hist, x='Month', y=['International', 'Local'],
                  barmode='stack',
                  color_discrete_map={'International': '#00CC96', 'Local': '#636EFA'},
                  title="Media Appearances Distribution (Historical Perspective)")
-
 fig_hist.update_layout(legend=bottom_legend, xaxis_title="", yaxis_title="Number of Appearances", hovermode="x unified")
 st.plotly_chart(fig_hist, use_container_width=True)
